@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beam Solver - Professional Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Cairo:wght@600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #0f172a;
+            --secondary: #2563eb;
+            --moment-color: #059669;
+            --def-color: #dc2626;
+            --background: #f8fafc;
+            --card: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Cairo', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--primary);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header-container { text-align: center; margin-bottom: 20px; }
+        h1 { color: var(--secondary); margin-bottom: 2px; font-size: 36px; font-family: 'Poppins', sans-serif; font-weight: 800; letter-spacing: -1px; }
+        .branding-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 18px; background: linear-gradient(to right, #2563eb, #1d4ed8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 2px; }
+        .branding-dept { font-family: 'Poppins', sans-serif; color: #64748b; font-size: 13px; font-weight: 600; }
+        p.subtitle { color: #64748b; margin-bottom: 10px; font-size: 13px; }
+
+        .main-container { display: flex; gap: 20px; max-width: 1400px; width: 100%; }
+        .canvas-area { flex: 2; display: flex; flex-direction: column; gap: 15px; position: relative; }
+        .canvas-container { background: #ffffff; border: 2px solid var(--primary); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 10px; position: relative; }
+        canvas { width: 100%; height: 540px; background: #fff; }
+
+        /* واجهة حجب الموقع واختيار الخطط */
+        .premium-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(6px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 10;
+            border-radius: 8px;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            display: none; 
+        }
+        .premium-box {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #3b82f6;
+            max-width: 550px;
+            width: 100%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .premium-box h2 { color: #f59e0b; margin-top: 0; font-size: 22px; }
+        
+        .plans-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .plan-card { background: #0f172a; border: 2px solid #334155; border-radius: 8px; padding: 15px 10px; cursor: pointer; transition: 0.2s; position: relative; }
+        .plan-card:hover { border-color: #3b82f6; transform: translateY(-2px); }
+        .plan-card.selected { border-color: #10b981; background: #1e293b; box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+        .plan-card h4 { margin: 0 0 8px 0; font-size: 14px; color: #cbd5e1; }
+        .plan-price { font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: bold; color: #10b981; }
+        .plan-duration { font-size: 11px; color: #64748b; display: block; margin-top: 2px; }
+        .badge-best { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; font-size: 9px; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+
+        .btn-pay { background: linear-gradient(to right, #2563eb, #1d4ed8); color: white; border: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer; width: 100%; transition: 0.2s; margin-top: 10px; }
+        .btn-pay:hover { opacity: 0.9; transform: scale(1.01); }
+
+        /* منطقة النتائج والطباعة */
+        .results-box { background: var(--primary); color: white; padding: 15px; border-radius: 8px; }
+        .results-box h3 { margin-top: 0; color: #f59e0b; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .res-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .res-item { background: #1e293b; padding: 10px; border-radius: 6px; font-size: 13px; text-align: center; }
+        .reactions-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        .reactions-table th, .reactions-table td { border: 1px solid #334155; padding: 6px; text-align: center; }
+        .reactions-table th { background-color: #1e293b; color: #f59e0b; }
+        
+        .btn-pdf { background: #10b981; color: white; border: none; padding: 6px 15px; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-family: 'Cairo', sans-serif; }
+        .btn-pdf:hover { background: #059669; }
+
+        /* لوحة التحكم الجانبية */
+        .controls-area { flex: 1; background: var(--card); padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto; }
+        .section-title { font-size: 14px; font-weight: bold; color: var(--secondary); border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 10px; }
+        .input-group { margin-bottom: 8px; }
+        label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+        input, select { width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; font-size: 13px; text-align: left; direction: ltr; }
+        .item-card { background: #f1f5f9; padding: 8px; border-radius: 6px; margin-bottom: 6px; position: relative; border-right: 3px solid var(--secondary); }
+        .btn-delete { background: #ef4444; color: white; border: none; padding: 1px 5px; border-radius: 4px; font-size: 11px; cursor: pointer; position: absolute; left: 5px; top: 5px; }
+        .btn-add { background: var(--secondary); color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%; margin-top: 5px; }
+        footer { margin-top: 35px; color: #64748b; font-size: 13px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+
+        /* ستايل مخصص للطباعة كمستند PDF هندسي منظم */
+        @media print {
+            body { background: white; color: black; padding: 0; }
+            .controls-area, footer, .premium-overlay { display: none !important; }
+            .main-container { display: block; }
+            .canvas-container { border: none; box-shadow: none; }
+            .results-box { background: white; color: black; border: 1px solid #cbd5e1; page-break-inside: avoid; }
+            .results-box h3, .res-item { color: black !important; background: #f1f5f9 !important; border: 1px solid #cbd5e1; }
+            .reactions-table th { background: #e2e8f0 !important; color: black !important; }
+            .reactions-table td, .reactions-table th { border: 1px solid #94a3b8 !important; }
+            .btn-pdf { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>Beam Solver</h1>
+        <div class="branding-name">Ahmed</div>
+        <div class="branding-dept">Mechanical Engineering Dept.</div>
+        <p class="subtitle" style="margin-top: 10px;">حاسبة متطورة لحل المنشآت هندسياً وحساب العزوم والترخيم بدقة متناهية</p>
+    </div>
+
+    <div id="printArea" class="main-container">
+        <div class="canvas-area">
+            <div class="canvas-container">
+                <div id="premiumOverlay" class="premium-overlay">
+                    <div class="premium-box">
+                        <h2>🔒 انتهت المحاولات المجانية</h2>
+                        <p style="font-size: 13px; color: #cbd5e1;">اختر خطة الاشتراك المناسبة لك لتفعيل الحاسبة الهندسية فوراً وبدء الحسابات الحية:</p>
+                        
+                        <div class="plans-grid">
+                            <div class="plan-card" id="plan-week" onclick="selectPlan('week', 5)">
+                                <h4>إشتراك أسبوعي</h4>
+                                <div class="plan-price">$5</div>
+                                <span class="plan-duration">صالح لمدة 7 أيام</span>
+                            </div>
+                            <div class="plan-card selected" id="plan-month" onclick="selectPlan('month', 10)">
+                                <h4>إشتراك شهري</h4>
+                                <div class="plan-price">$10</div>
+                                <span class="plan-duration">صالح لمدة 30 يوم</span>
+                            </div>
+                            <div class="plan-card" id="plan-lifetime" onclick="selectPlan('lifetime', 50)">
+                                <span class="badge-best">الأكثر توفيراً</span>
+                                <h4>إشتراك سنوي</h4>
+                                <div class="plan-price">$50</div>
+                                <span class="plan-duration">صالح لمدة سنة كاملة</span>
+                            </div>
+                        </div>
+
+                        <button class="btn-pay" onclick="processPayment()">تأكيد الاشتراك والدفع عبر PayPal</button>
+                    </div>
+                </div>
+                
+                <canvas id="femCanvas"></canvas>
+            </div>
+            
+            <div class="results-box">
+                <h3>
+                    <span>نتائج الحسابات الإنشائية الرقمية:</span>
+                    <button class="btn-pdf" onclick="printToPDF()">🖨️ طباعة تقرير PDF</button>
+                </h3>
+                <div class="res-grid">
+                    <div class="res-item">أقصى عزم انحناء:<br><span id="outMaxM" style="color:#10b981; font-weight:bold; font-size:16px;">0.00</span> kN·m</div>
+                    <div class="res-item">Max Deflection:<br><span id="outMaxD" style="color:#f43f5e; font-weight:bold; font-size:16px;">0.000</span> mm</div>
+                    <div class="res-item" style="border: 1px solid #3b82f6;">Deflection عند X المحددة:<br><span id="outCustomD" style="color:#3b82f6; font-weight:bold; font-size:16px;">0.000</span> mm</div>
+                </div>
+                
+                <table class="reactions-table">
+                    <thead>
+                        <tr>
+                            <th>الركيزة</th>
+                            <th>المكان (متر)</th>
+                            <th>النوع</th>
+                            <th>قيمة رد الفعل (Reaction)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reactionsBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="controls-area">
+            <div>
+                <div class="section-title">1. أبعاد الكمرة وحساب الـ Deflection</div>
+                <div class="input-group">
+                    <label>طول الكمرة الكلي L (متر):</label>
+                    <input type="number" id="beamL" value="6" min="1" step="0.5" oninput="solveAndDrawAll()">
+                </div>
+                <div class="input-group" style="background: #eff6ff; padding: 6px; border-radius: 4px; border: 1px dashed #3b82f6;">
+                    <label style="color: #1e40af;">احسب الـ Deflection عند مسافة X (متر):</label>
+                    <input type="number" id="customX" value="3" min="0" step="0.1" oninput="solveAndDrawAll()">
+                </div>
+            </div>
+            <div>
+                <div class="section-title">2. الركائز (Supports)</div>
+                <div id="supportsList"></div>
+                <button class="btn-add" onclick="addSupport()">+ إضافة ركيزة</button>
+            </div>
+            <div>
+                <div class="section-title">3. الأحمال المركزية (Point Loads)</div>
+                <div id="loadsList"></div>
+                <button class="btn-add" style="background:#ea580c" onclick="addLoad()">+ إضافة حمل مركز</button>
+            </div>
+            <div>
+                <div class="section-title">4. الأحمال الموزعة (UDL Loads)</div>
+                <div id="udlsList"></div>
+                <button class="btn-add" style="background:#2563eb" onclick="addUDL()">+ إضافة حمل موزع جديد</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="branding-name" style="font-size:15px;">Ahmed</div>
+        <div class="branding-dept" style="font-size:12px;">Mechanical Engineering Dept. &copy; 2026</div>
+    </footer>
+
+    <script>
+        const canvas = document.getElementById('femCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let supports = [{ id: 1, type: 'pin', pos: 0 }, { id: 2, type: 'roller', pos: 6 }];
+        let supCounter = 2;
+        let pointLoads = [{ id: 1, val: 30, pos: 3, dir: 'down' }];
+        let loadCounter = 1;
+        
+        // السيستم الجديد للأحمال الموزعة المتعددة
+        let udlLoads = [{ id: 1, w: 10, x1: 1, x2: 5 }];
+        let udlCounter = 1;
+
+        // ================== سـيـسـتـم الـأقـفـال والـتـواريـخ ==================
+        let activePlan = 'month'; 
+        let planPrice = 10;
+
+        function selectPlan(planType, price) {
+            activePlan = planType; planPrice = price;
+            document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById(`plan-${planType}`).classList.add('selected');
+        }
+
+        function checkPremiumStatus() {
+            let expiry = localStorage.getItem('premium_expiry_date');
+            if (!expiry) {
+                let totalCalculationsDone = parseInt(localStorage.getItem('calculations_count')) || 0;
+                if (totalCalculationsDone >= 1) {
+                    document.getElementById('premiumOverlay').style.display = 'flex';
+                    return false;
+                }
+                return true;
+            }
+            let today = new Date().getTime();
+            if (today > parseInt(expiry)) {
+                localStorage.removeItem('premium_expiry_date'); 
+                document.getElementById('premiumOverlay').style.display = 'flex';
+                return false;
+            }
+            return true;
+        }
+
+        function processPayment() {
+            let paypalLinks = { 'week': 'https://paypal.me/BeamSolver/5', 'month': 'https://paypal.me/BeamSolver/10', 'lifetime': 'https://paypal.me/BeamSolver/50' };
+            let expiryTime; let now = new Date();
+            if (activePlan === 'week') expiryTime = now.getTime() + (7 * 24 * 60 * 60 * 1000); 
+            else if (activePlan === 'month') expiryTime = now.getTime() + (30 * 24 * 60 * 60 * 1000); 
+            else expiryTime = now.getTime() + (365 * 24 * 60 * 60 * 1000);
+            localStorage.setItem('premium_expiry_date', expiryTime);
+            window.location.href = paypalLinks[activePlan];
+        }
+        // ===================================================================
+
+        // واجهات التحكم الديناميكية
+        function renderSupportsUI() {
+            const container = document.getElementById('supportsList'); container.innerHTML = '';
+            supports.forEach(sup => {
+                const div = document.createElement('div'); div.className = 'item-card';
+                div.innerHTML = `<button class="btn-delete" onclick="deleteSupport(${sup.id})">حذف</button><div style="display:flex; gap:5px;"><div style="flex:1"><label>النوع:</label><select onchange="updateSupType(${sup.id}, this.value)"><option value="pin" ${sup.type==='pin'?'selected':''}>Pin</option><option value="roller" ${sup.type==='roller'?'selected':''}>Roller</option><option value="fixed" ${sup.type==='fixed'?'selected':''}>Fixed</option></select></div><div style="flex:1"><label>المكان X (م):</label><input type="number" value="${sup.pos}" step="0.1" oninput="updateSupPos(${sup.id}, this.value)"></div></div>`;
+                container.appendChild(div);
+            });
+        }
+
+        function renderLoadsUI() {
+            const container = document.getElementById('loadsList'); container.innerHTML = '';
+            pointLoads.forEach(load => {
+                const div = document.createElement('div'); div.className = 'item-card'; div.style.borderRightColor = '#ea580c';
+                div.innerHTML = `<button class="btn-delete" onclick="deleteLoad(${load.id})">حذف</button><div style="display:flex; gap:5px; flex-direction:column;"><div style="display:flex; gap:5px;"><div style="flex:1"><label>القوة P (kN):</label><input type="number" value="${load.val}" oninput="updateLoadVal(${load.id}, this.value)"></div><div style="flex:1"><label>المكان X (م):</label><input type="number" value="${load.pos}" step="0.1" oninput="updateLoadPos(${load.id}, this.value)"></div></div><div><select onchange="updateLoadDir(${load.id}, this.value)"><option value="down" ${load.dir==='down'?'selected':''}>لأسفل</option><option value="up" ${load.dir==='up'?'selected':''}>لأعلى</option></select></div></div>`;
+                container.appendChild(div);
+            });
+        }
+
+        function renderUdlsUI() {
+            const container = document.getElementById('udlsList'); container.innerHTML = '';
+            udlLoads.forEach(udl => {
+                const div = document.createElement('div'); div.className = 'item-card'; div.style.borderRightColor = '#2563eb';
+                div.innerHTML = `<button class="btn-delete" onclick="deleteUDL(${udl.id})">حذف</button><div style="display:flex; gap:5px; flex-direction:column;"><div class="input-group"><label>قيمة الحمل w (kN/m):</label><input type="number" value="${udl.w}" oninput="updateUdlW(${udl.id}, this.value)"></div><div style="display:flex; gap:5px;"><div style="flex:1"><label>من مسافة (م):</label><input type="number" value="${udl.x1}" step="0.1" oninput="updateUdlX1(${udl.id}, this.value)"></div><div style="flex:1"><label>إلى مسافة (م):</label><input type="number" value="${udl.x2}" step="0.1" oninput="updateUdlX2(${udl.id}, this.value)"></div></div></div>`;
+                container.appendChild(div);
+            });
+        }
+
+        // دالات التحكم بالـ UDL المتعددة
+        function addUDL() { if(!checkPremiumStatus()) return; if(!localStorage.getItem('premium_expiry_date')) localStorage.setItem('calculations_count', 1); udlCounter++; const L = parseFloat(document.getElementById('beamL').value)||1; udlLoads.push({ id: udlCounter, w: 10, x1: 0, x2: L }); renderUdlsUI(); solveAndDrawAll(); }
+        function deleteUDL(id) { if(!checkPremiumStatus()) return; udlLoads = udlLoads.filter(u => u.id !== id); renderUdlsUI(); solveAndDrawAll(); }
+        function updateUdlW(id, val) { let u = udlLoads.find(x => x.id === id); if(u) u.w = parseFloat(val) || 0; solveAndDrawAll(); }
+        function updateUdlX1(id, val) { let u = udlLoads.find(x => x.id === id); if(u) u.x1 = parseFloat(val) || 0; solveAndDrawAll(); }
+        function updateUdlX2(id, val) { let u = udlLoads.find(x => x.id === id); if(u) u.x2 = parseFloat(val) || 0; solveAndDrawAll(); }
+
+        function addSupport() { if(!checkPremiumStatus()) return; if(!localStorage.getItem('premium_expiry_date')) localStorage.setItem('calculations_count', 1); supCounter++; const L = parseFloat(document.getElementById('beamL').value)||1; supports.push({ id: supCounter, type: 'roller', pos: L/2 }); renderSupportsUI(); solveAndDrawAll(); }
+        function deleteSupport(id) { if(!checkPremiumStatus()) return; supports = supports.filter(s => s.id !== id); renderSupportsUI(); solveAndDrawAll(); }
+        function updateSupType(id, type) { let s = supports.find(x => x.id === id); if(s) s.type = type; solveAndDrawAll(); }
+        function updateSupPos(id, pos) { let s = supports.find(x => x.id === id); if(s) s.pos = parseFloat(pos) || 0; solveAndDrawAll(); }
+
+        function addLoad() { if(!checkPremiumStatus()) return; if(!localStorage.getItem('premium_expiry_date')) localStorage.setItem('calculations_count', 1); loadCounter++; const L = parseFloat(document.getElementById('beamL').value)||1; pointLoads.push({ id: loadCounter, val: 20, pos: L/2, dir: 'down' }); renderLoadsUI(); solveAndDrawAll(); }
+        function deleteLoad(id) { if(!checkPremiumStatus()) return; pointLoads = pointLoads.filter(l => l.id !== id); renderLoadsUI(); solveAndDrawAll(); }
+        function updateLoadVal(id, val) { let l = pointLoads.find(x => x.id === id); if(l) l.val = parseFloat(val) || 0; solveAndDrawAll(); }
+        function updateLoadPos(id, pos) { let l = pointLoads.find(x => x.id === id); if(l) l.pos = parseFloat(pos) || 0; solveAndDrawAll(); }
+        function updateLoadDir(id, dir) { let l = pointLoads.find(x => x.id === id); if(l) l.dir = dir; solveAndDrawAll(); }
+
+        // الموتور الرياضي وحساب الـ FEM والمصفوفات المحدث بالكامل
+        function solveAndDrawAll() {
+            if (!checkPremiumStatus()) return;
+
+            canvas.width = canvas.parentElement.offsetWidth; canvas.height = 540; ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const L = parseFloat(document.getElementById('beamL').value) || 1;
+            let customX = parseFloat(document.getElementById('customX').value) || 0;
+
+            const EI = 200 * 1e9 * 10000 * 1e-8; 
+            if(customX > L) { customX = L; document.getElementById('customX').value = L; }
+            if(customX < 0) { customX = 0; document.getElementById('customX').value = 0; }
+
+            supports.forEach(s => { if(s.pos > L) s.pos = L; if(s.pos < 0) s.pos = 0; });
+            pointLoads.forEach(l => { if(l.pos > L) l.pos = L; if(l.pos < 0) l.pos = 0; });
+            udlLoads.forEach(u => { if(u.x1 > L) u.x1 = L; if(u.x2 > L) u.x2 = L; if(u.x2 < u.x1) u.x2 = u.x1; });
+
+            const padding = 130; const plotW = canvas.width - (2 * padding); const scaleX = plotW / L;
+            const beamY = 110, momentY = 280, deflectionY = 460;
+            const numElems = 120; const numNodes = numElems + 1; const le = L / numElems;
+
+            let K = Array(numNodes * 2).fill(0).map(() => Array(numNodes * 2).fill(0));
+            let K_orig = Array(numNodes * 2).fill(0).map(() => Array(numNodes * 2).fill(0));
+            let F = Array(numNodes * 2).fill(0);
+
+            for (let e = 0; e < numElems; e++) {
+                let n1 = e, n2 = e + 1; let dofs = [n1*2, n1*2+1, n2*2, n2*2+1];
+                let ke = [
+                    [12*EI/Math.pow(le,3), 6*EI/Math.pow(le,2), -12*EI/Math.pow(le,3), 6*EI/Math.pow(le,2)],
+                    [6*EI/Math.pow(le,2), 4*EI/le, -6*EI/Math.pow(le,2), 2*EI/le],
+                    [-12*EI/Math.pow(le,3), -6*EI/Math.pow(le,2), 12*EI/Math.pow(le,3), -6*EI/Math.pow(le,2)],
+                    [6*EI/Math.pow(le,2), 2*EI/le, -6*EI/Math.pow(le,2), 4*EI/le]
+                ];
+                for(let i=0; i<4; i++){ for(let j=0; j<4; j++){ K[dofs[i]][dofs[j]] += ke[i][j]; K_orig[dofs[i]][dofs[j]] += ke[i][j]; } }
+            }
+
+            pointLoads.forEach(load => {
+                let nodeP = Math.round((load.pos / L) * numElems);
+                let forceSign = (load.dir === 'down') ? -1 : 1;
+                F[nodeP * 2] += load.val * 1000 * forceSign;
+            });
+
+            // حساب كافة الأحمال الموزعة المتراكبة ديناميكياً
+            for (let e = 0; e < numElems; e++) {
+                let xLeft = e * le; let xRight = (e + 1) * le;
+                udlLoads.forEach(udl => {
+                    if (xRight >= udl.x1 && xLeft <= udl.x2) {
+                        let f_equiv = udl.w * 1000 * le / 2; let m_equiv = udl.w * 1000 * Math.pow(le, 2) / 12;
+                        F[e * 2] -= f_equiv; F[e * 2 + 1] -= m_equiv; F[(e + 1) * 2] -= f_equiv; F[(e + 1) * 2 + 1] += m_equiv;
+                    }
+                });
+            }
+
+            let fixedDofs = new Set();
+            supports.forEach(sup => {
+                let n = Math.round((sup.pos / L) * numElems);
+                if (sup.type === 'pin' || sup.type === 'roller') { fixedDofs.add(n * 2); }
+                else if (sup.type === 'fixed') { fixedDofs.add(n * 2); fixedDofs.add(n * 2 + 1); }
+            });
+
+            let F_orig = [...F];
+            fixedDofs.forEach(dof => { for (let j = 0; j < numNodes * 2; j++) K[dof][j] = 0; K[dof][dof] = 1; F[dof] = 0; });
+
+            let U = gaussElimination(K, F);
+            let Reactions = Array(numNodes * 2).fill(0);
+            for (let i = 0; i < numNodes * 2; i++) {
+                let sum = 0; for (let j = 0; j < numNodes * 2; j++) sum += K_orig[i][j] * U[j];
+                Reactions[i] = sum - F_orig[i];
+            }
+
+            let plotPoints = []; let maxM = 0, maxD = 0;
+            for (let e = 0; e < numElems; e++) {
+                let n1 = e, n2 = e + 1; let xLeft = e * le;
+                let u_elem = [U[n1*2], U[n1*2+1], U[n2*2], U[n2*2+1]];
+                let Me = (EI / Math.pow(le, 2)) * (-6*u_elem[0] - 4*le*u_elem[1] + 6*u_elem[2] - 2*le*u_elem[3]);
+                let disp_mm = U[e * 2] * 1000;
+                if (Math.abs(Me) > maxM) maxM = Math.abs(Me); if (Math.abs(disp_mm) > maxD) maxD = Math.abs(disp_mm);
+                plotPoints.push({ x: padding + (xLeft * scaleX), M: Me / 1000, D: disp_mm });
+            }
+            plotPoints.push({ x: padding + plotW, M: 0, D: U[numElems * 2] * 1000 });
+
+            let customNodeFloat = (customX / L) * numElems; let baseNode = Math.floor(customNodeFloat); let rem = customNodeFloat - baseNode;
+            let customDisp_mm = (baseNode >= numElems) ? U[numElems * 2] * 1000 : U[baseNode * 2] * 1000 + (U[(baseNode + 1) * 2] * 1000 - U[baseNode * 2] * 1000) * rem;
+
+            const scaleM = maxM > 0 ? 50 / (maxM / 1000) : 1; const scaleD = maxD > 0 ? 45 / maxD : 1;
+            ctx.fillStyle = '#475569'; ctx.fillRect(padding, beamY, plotW, 10);
+            ctx.fillStyle = '#1e293b'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'left';
+            ctx.fillText(" Beam & Loads ──>", 10, beamY + 8); ctx.fillText(" Moment Diagram ──>", 10, momentY + 4); ctx.fillText(" Elastic Curve ──>", 10, deflectionY + 4);
+
+            supports.forEach(sup => {
+                const supX = padding + (sup.pos * scaleX);
+                if (sup.type === 'pin') { ctx.fillStyle = '#1e3a8a'; ctx.beginPath(); ctx.moveTo(supX, beamY+10); ctx.lineTo(supX-11, beamY+24); ctx.lineTo(supX+11, beamY+24); ctx.closePath(); ctx.fill(); }
+                else if (sup.type === 'roller') { ctx.fillStyle = '#0d9488'; ctx.beginPath(); ctx.arc(supX, beamY+17, 7, 0, Math.PI*2); ctx.fill(); }
+                else if (sup.type === 'fixed') { ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(supX, beamY-22); ctx.lineTo(supX, beamY+32); ctx.stroke(); }
+            });
+
+            pointLoads.forEach(load => {
+                if (load.val > 0) {
+                    const pCanvasX = padding + (load.pos * scaleX); ctx.strokeStyle = '#ea580c'; ctx.fillStyle = '#ea580c'; ctx.lineWidth = 3; ctx.beginPath();
+                    if(load.dir === 'down') { ctx.moveTo(pCanvasX, beamY-40); ctx.lineTo(pCanvasX, beamY-2); ctx.lineTo(pCanvasX-5, beamY-10); ctx.moveTo(pCanvasX, beamY-2); ctx.lineTo(pCanvasX+5, beamY-10); } 
+                    else { ctx.moveTo(pCanvasX, beamY+50); ctx.lineTo(pCanvasX, beamY+12); ctx.lineTo(pCanvasX-5, beamY+18); ctx.moveTo(pCanvasX, beamY+12); ctx.lineTo(pCanvasX+5, beamY+18); }
+                    ctx.stroke(); ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.fillText(`${load.val} kN`, pCanvasX, load.dir==='down'?beamY-45:beamY+62);
+                }
+            });
+
+            // رسم كافة الـ UDLs المضافة بشكل تراكبي هندسي رائع
+            udlLoads.forEach(udl => {
+                if (udl.w > 0 && (udl.x2 - udl.x1) > 0) {
+                    ctx.fillStyle = 'rgba(37, 99, 235, 0.08)'; ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 1.5;
+                    ctx.fillRect(padding + (udl.x1 * scaleX), beamY - 25, (udl.x2 - udl.x1) * scaleX, 25);
+                    ctx.strokeRect(padding + (udl.x1 * scaleX), beamY - 25, (udl.x2 - udl.x1) * scaleX, 25);
+                }
+            });
+
+            ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+            ctx.beginPath(); ctx.moveTo(padding, momentY); ctx.lineTo(padding + plotW, momentY);
+            ctx.beginPath(); ctx.moveTo(padding, deflectionY); ctx.lineTo(padding + plotW, deflectionY); ctx.moveTo(padding + (customX * scaleX), deflectionY - 45); ctx.lineTo(padding + (customX * scaleX), deflectionY + 45); ctx.stroke(); ctx.setLineDash([]);
+
+            ctx.strokeStyle = '#059669'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(plotPoints[0].x, momentY);
+            plotPoints.forEach(p => ctx.lineTo(p.x, momentY + (p.M * scaleM))); ctx.lineTo(plotPoints[plotPoints.length-1].x, momentY); ctx.stroke();
+
+            ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 3; ctx.beginPath(); plotPoints.forEach((p, idx) => { let drawY = deflectionY - (p.D * scaleD); if(idx === 0) ctx.moveTo(p.x, drawY); else ctx.lineTo(p.x, drawY); }); ctx.stroke();
+            ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(padding + (customX * scaleX), deflectionY - (customDisp_mm * scaleD), 5, 0, Math.PI * 2); ctx.fill();
+
+            document.getElementById('outMaxM').innerText = (maxM / 1000).toFixed(2); document.getElementById('outMaxD').innerText = Math.abs(maxD).toFixed(3); document.getElementById('outCustomD').innerText = Math.abs(customDisp_mm).toFixed(3);
+
+            const tbody = document.getElementById('reactionsBody'); tbody.innerHTML = '';
+            supports.forEach((sup, idx) => {
+                let n = Math.round((sup.pos / L) * numElems); let ry_kN = (Reactions[n * 2] / 1000); let extra = sup.type === 'fixed' ? ` | العزم: ${(Reactions[n * 2 + 1] / 1000).toFixed(2)} kN·m` : "";
+                const tr = document.createElement('tr'); tr.innerHTML = `<td>ركيزة ${idx + 1}</td><td>${sup.pos.toFixed(1)} م</td><td><strong>${sup.type.toUpperCase()}</strong></td><td><span style="color:#60a5fa; font-weight:bold;">${Math.abs(ry_kN).toFixed(1)} kN</span>${extra}</td>`; tbody.appendChild(tr);
+            });
+        }
+
+        function gaussElimination(A, B) {
+            let n = B.length;
+            for (let i = 0; i < n; i++) {
+                let maxEl = Math.abs(A[i][i]), maxRow = i;
+                for (let k = i + 1; k < n; k++) { if (Math.abs(A[k][i]) > maxEl) { maxEl = Math.abs(A[k][i]); maxRow = k; } }
+                for (let k = i; k < n; k++) { let tmp = A[maxRow][k]; A[maxRow][k] = A[i][k]; A[i][k] = tmp; }
+                [B[maxRow], B[i]] = [B[i], B[maxRow]];
+                for (let k = i + 1; k < n; k++) {
+                    let c = -A[k][i] / A[i][i];
+                    for (let j = i; j < n; j++) { if (i === j) A[k][j] = 0; else A[k][j] += c * A[i][j]; }
+                    B[k] += c * B[i];
+                }
+            }
+            let X = Array(n).fill(0);
+            for (let i = n - 1; i >= 0; i--) { X[i] = B[i] / A[i][i]; for (let k = i - 1; k >= 0; k--) B[k] -= A[k][i] * X[i]; }
+            return X;
+        }
+
+        // دالة طباعة الـ PDF المخصصة والمحترفة
+        function printToPDF() {
+            window.print();
+        }
+
+        window.onload = () => { renderSupportsUI(); renderLoadsUI(); renderUdlsUI(); solveAndDrawAll(); };
+        window.addEventListener('resize', solveAndDrawAll);
+    </script>
+</body>
+</html>
